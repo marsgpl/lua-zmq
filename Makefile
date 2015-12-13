@@ -1,6 +1,6 @@
 #
 
-NAME = $(notdir $(basename $(PWD)))
+NAME = zmq
 INSTALL_DIR = /home/pd/lib/lua
 
 CC = gcc
