@@ -3,6 +3,7 @@
 #ifndef lua_pd_h
 #define lua_pd_h
 
+#include <errno.h>
 #include <string.h>
 
 #include "lauxlib.h"

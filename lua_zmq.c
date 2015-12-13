@@ -483,7 +483,7 @@ static int lua_zmq_z85_encode( lua_State *L ) {
 
     size_t dest_len = (size_t)(ceil(len * 1.25) + 1);
     char dest[dest_len];
-    memset(dest, '\0', dest_len);
+    memset(dest, 0, dest_len);
 
     if ( zmq_z85_encode(dest, str, len) ) {
         lua_pushstring(L, dest);
