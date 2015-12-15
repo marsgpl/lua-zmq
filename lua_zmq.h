@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <zmq.h>
 #include <math.h>
+#include <time.h>
 
 #include "lua_pd.h"
 
@@ -48,6 +49,7 @@ typedef struct lua_ud_zmq_socket {
 LUAMOD_API int luaopen_zmq( lua_State *L );
 
 static int lua_zmq_sleep( lua_State *L );
+static int lua_zmq_microtime( lua_State *L );
 
 static int lua_zmq_context( lua_State *L );
 static int lua_zmq_context_get( lua_State *L );
@@ -76,6 +78,7 @@ static int lua_zmq_z85_keypair( lua_State *L );
 static const luaL_Reg __index[] = {
     {"context", lua_zmq_context},
     {"sleep", lua_zmq_sleep},
+    {"microtime", lua_zmq_microtime},
     {NULL, NULL}
 };
 

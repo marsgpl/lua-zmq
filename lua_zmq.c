@@ -109,9 +109,8 @@ static int lua_zmq_context_gc( lua_State *L ) {
     lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
 
     if ( ctx->context ) {
-        // do nothing - we have pseudo-global context here!
-            //zmq_ctx_term(ctx->context);
-            //ctx->context = NULL;
+        //zmq_ctx_term(ctx->context);
+        ctx->context = NULL;
     }
 
     return 0;
@@ -557,12 +556,37 @@ static int lua_zmq_z85_keypair( lua_State *L ) {
 
 // misc
 
+// old style:
+    //int seconds = luaL_checkinteger(L, 1);
+    //zmq_sleep(seconds);
+    //return 0;
 static int lua_zmq_sleep( lua_State *L ) {
-    int seconds = luaL_checkinteger(L, 1);
-
-    zmq_sleep(seconds);
-
+    double input = luaL_optnumber(L, 1, 0);
+    struct timespec t;
+    t.tv_sec  = (long)input;
+    t.tv_nsec = (long)((input - (long)input) * 1e9);
+    if ( nanosleep(&t, NULL) == -1 ) lua_errno(L);
     return 0;
+}
+
+// CLOCK_REALTIME
+// CLOCK_REALTIME_COARSE
+// CLOCK_MONOTONIC
+// CLOCK_MONOTONIC_COARSE
+// CLOCK_MONOTONIC_RAW
+// CLOCK_BOOTTIME
+// CLOCK_PROCESS_CPUTIME_ID
+// CLOCK_THREAD_CPUTIME_ID
+// old style:
+    // #include <sys/time.h>
+    // struct timeval tv;
+    // gettimeofday(&tv, NULL);
+    // lua_pushnumber(L, tv.tv_sec + tv.tv_usec * 1e-6);
+static int lua_zmq_microtime( lua_State *L ) {
+    struct timespec t;
+    if ( clock_gettime(CLOCK_REALTIME, &t) == -1 ) lua_errno(L);
+    lua_pushnumber(L, t.tv_sec + t.tv_nsec * 1e-9);
+    return 1;
 }
 
 /*
