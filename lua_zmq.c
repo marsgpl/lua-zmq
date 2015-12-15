@@ -2,8 +2,6 @@
 
 #include "lua_zmq.h"
 
-//
-
 LUAMOD_API int luaopen_zmq( lua_State *L ) {
     lua_newmt(L, LUA_MT_ZMQ_CONTEXT, __context_index, lua_zmq_context_gc);
     lua_newmt(L, LUA_MT_ZMQ_SOCKET, __socket_index, lua_zmq_socket_gc);
@@ -35,11 +33,23 @@ static int lua_zmq_context( lua_State *L ) {
         lua_fail(L, "lua_ud_zmq_context alloc failed", 0);
     }
 
-    ctx->context = zmq_ctx_new();
+    //
+    lua_getfield(L, LUA_REGISTRYINDEX, LUA_ZMQ_CONTEXT_METAFIELD);
 
-    if ( !ctx->context ) {
-        lua_zmq_fail(L, "zmq_ctx_new");
+    if ( lua_isnil(L, -1) ) { // create new
+        ctx->context = zmq_ctx_new();
+        if ( !ctx->context ) {
+            lua_zmq_fail(L, "zmq_ctx_new");
+        } else {
+            lua_pop(L, 1);
+            lua_pushlightuserdata(L, ctx->context);
+            lua_setfield(L, LUA_REGISTRYINDEX, LUA_ZMQ_CONTEXT_METAFIELD);
+        }
+    } else { // use existing
+        ctx->context = lua_touserdata(L, -1);
+        lua_pop(L, 1);
     }
+    //
 
     luaL_setmetatable(L, LUA_MT_ZMQ_CONTEXT);
 
@@ -50,6 +60,17 @@ static int lua_zmq_context( lua_State *L ) {
         lua_pop(L, 1);
     }
 
+    return 1;
+}
+
+static int lua_zmq_context_debug( lua_State *L ) {
+    lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
+
+    if ( !ctx->context ) {
+        lua_fail(L, "zmq_context is dead", 0);
+    }
+
+    lua_pushfstring(L, "%p", ctx->context);
     return 1;
 }
 
@@ -88,8 +109,9 @@ static int lua_zmq_context_gc( lua_State *L ) {
     lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
 
     if ( ctx->context ) {
-        zmq_ctx_term(ctx->context);
-        ctx->context = NULL;
+        // do nothing - we have pseudo-global context here!
+            //zmq_ctx_term(ctx->context);
+            //ctx->context = NULL;
     }
 
     return 0;
@@ -533,6 +555,16 @@ static int lua_zmq_z85_keypair( lua_State *L ) {
     }
 }
 
+// misc
+
+static int lua_zmq_sleep( lua_State *L ) {
+    int seconds = luaL_checkinteger(L, 1);
+
+    zmq_sleep(seconds);
+
+    return 0;
+}
+
 /*
 ZMQ_EXPORT int zmq_send_const (void *s, const void *buf, size_t len, int flags);
 ZMQ_EXPORT int zmq_socket_monitor (void *s, const char *addr, int events);
@@ -546,8 +578,6 @@ ZMQ_EXPORT int zmq_has (const char *capability);
 
 ZMQ_EXPORT void *zmq_stopwatch_start (void);
 ZMQ_EXPORT unsigned long zmq_stopwatch_stop (void *watch_);
-
-ZMQ_EXPORT void zmq_sleep (int seconds_);
 
 ZMQ_EXPORT void *zmq_threadstart (zmq_thread_fn* func, void* arg);
 ZMQ_EXPORT void zmq_threadclose (void* thread);

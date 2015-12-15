@@ -27,4 +27,5 @@ $(MAIN_T): $(MAIN_O)
 .c.o:
 	$(CC) $(CCFLAGS) -o $@ $< $(INCS)
 
-lua_$(NAME).o: lua_pd.h lua_$(NAME).h lua_$(NAME)_flags.c
+lua_$(NAME).o: lua_pd.h lua_$(NAME).h \
+    lua_$(NAME)_flags.c

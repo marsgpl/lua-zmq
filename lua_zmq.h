@@ -8,8 +8,10 @@
 
 //
 
-#define LUA_MT_ZMQ_CONTEXT "zmq.context"
-#define LUA_MT_ZMQ_SOCKET "zmq.socket"
+#define LUA_MT_ZMQ_CONTEXT "mt.zmq.context"
+#define LUA_MT_ZMQ_SOCKET "mt.zmq.socket"
+
+#define LUA_ZMQ_CONTEXT_METAFIELD "_zmq_ctx"
 
 #define LUA_ZMQ_CURVE_KEY_MAXLENGTH 41
 #define LUA_ZMQ_RECV_BUFF_SIZE 4096
@@ -45,11 +47,14 @@ typedef struct lua_ud_zmq_socket {
 
 LUAMOD_API int luaopen_zmq( lua_State *L );
 
+static int lua_zmq_sleep( lua_State *L );
+
 static int lua_zmq_context( lua_State *L );
 static int lua_zmq_context_get( lua_State *L );
 static int lua_zmq_context_set( lua_State *L );
 static int lua_zmq_context_gc( lua_State *L );
 static int lua_zmq_context_shutdown( lua_State *L );
+static int lua_zmq_context_debug( lua_State *L );
 
 static int lua_zmq_socket( lua_State *L );
 static int lua_zmq_socket_bind( lua_State *L );
@@ -70,6 +75,7 @@ static int lua_zmq_z85_keypair( lua_State *L );
 
 static const luaL_Reg __index[] = {
     {"context", lua_zmq_context},
+    {"sleep", lua_zmq_sleep},
     {NULL, NULL}
 };
 
@@ -79,6 +85,7 @@ static const luaL_Reg __context_index[] = {
     {"socket", lua_zmq_socket},
     {"term", lua_zmq_context_gc},
     {"shutdown", lua_zmq_context_shutdown},
+    {"debug", lua_zmq_context_debug},
     {NULL, NULL}
 };
 
