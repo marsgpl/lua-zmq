@@ -5,6 +5,10 @@ local trace = require "trace"
 
 --
 
-zmq.sleep(3.54321)
+local ts1 = zmq.microtime()
 
--- run like this: time lua test.sleep.lua
+zmq.sleep(1.23456)
+
+local ts2 = zmq.microtime()
+
+print("time spent:", ts2-ts1)
