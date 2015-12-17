@@ -50,6 +50,7 @@ LUAMOD_API int luaopen_zmq( lua_State *L );
 
 static int lua_zmq_sleep( lua_State *L );
 static int lua_zmq_microtime( lua_State *L );
+static int lua_zmq__get_ctx_mf( lua_State *L );
 
 static int lua_zmq_context( lua_State *L );
 static int lua_zmq_context_get( lua_State *L );
@@ -79,6 +80,7 @@ static const luaL_Reg __index[] = {
     {"context", lua_zmq_context},
     {"sleep", lua_zmq_sleep},
     {"microtime", lua_zmq_microtime},
+    {"__get_ctx_mf", lua_zmq__get_ctx_mf},
     {NULL, NULL}
 };
 

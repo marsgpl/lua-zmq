@@ -20,6 +20,11 @@ LUAMOD_API int luaopen_zmq( lua_State *L ) {
 
 // context
 
+static int lua_zmq__get_ctx_mf( lua_State *L ) {
+    lua_pushstring(L, LUA_ZMQ_CONTEXT_METAFIELD);
+    return 1;
+}
+
 static int lua_zmq_context( lua_State *L ) {
     //luaL_checktype(L, 1, LUA_TTABLE);
     if ( !lua_istable(L, 1) ) {
@@ -106,12 +111,12 @@ static int lua_zmq_context_set( lua_State *L ) {
 }
 
 static int lua_zmq_context_gc( lua_State *L ) {
-    lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
+    /*lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
 
     if ( ctx->context ) {
-        //zmq_ctx_term(ctx->context);
+        zmq_ctx_term(ctx->context);
         ctx->context = NULL;
-    }
+    }*/
 
     return 0;
 }
