@@ -571,7 +571,7 @@ static int lua_zmq_sleep( lua_State *L ) {
     t.tv_sec  = (long)input;
     t.tv_nsec = (long)((input - (long)input) * 1e9);
     if ( nanosleep(&t, NULL) == -1 ) lua_errno(L);
-    return 0;
+    return 1;
 }
 
 // CLOCK_REALTIME
