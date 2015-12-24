@@ -111,12 +111,12 @@ static int lua_zmq_context_set( lua_State *L ) {
 }
 
 static int lua_zmq_context_gc( lua_State *L ) {
-    /*lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
+    lua_ud_zmq_context *ctx = luaL_checkudata(L, 1, LUA_MT_ZMQ_CONTEXT);
 
     if ( ctx->context ) {
         zmq_ctx_term(ctx->context);
         ctx->context = NULL;
-    }*/
+    }
 
     return 0;
 }
