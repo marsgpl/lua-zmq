@@ -38,7 +38,6 @@ static int lua_zmq_context( lua_State *L ) {
         lua_fail(L, "lua_ud_zmq_context alloc failed", 0);
     }
 
-    //
     lua_getfield(L, LUA_REGISTRYINDEX, LUA_ZMQ_CONTEXT_METAFIELD);
 
     if ( lua_isnil(L, -1) ) { // create new
@@ -50,20 +49,19 @@ static int lua_zmq_context( lua_State *L ) {
             lua_pushlightuserdata(L, ctx->context);
             lua_setfield(L, LUA_REGISTRYINDEX, LUA_ZMQ_CONTEXT_METAFIELD);
         }
+
+        // set opts from arg#1 table
+        lua_pushnil(L);
+        while ( lua_next(L, 1) != 0 ) {
+            zmq_ctx_set(ctx->context, (int)lua_tointeger(L, -2), (int)lua_tointeger(L, -1));
+            lua_pop(L, 1);
+        }
     } else { // use existing
         ctx->context = lua_touserdata(L, -1);
         lua_pop(L, 1);
     }
-    //
 
     luaL_setmetatable(L, LUA_MT_ZMQ_CONTEXT);
-
-    // set opts from arg#1 table
-    lua_pushnil(L);
-    while ( lua_next(L, 1) != 0 ) {
-        zmq_ctx_set(ctx->context, (int)lua_tointeger(L, -2), (int)lua_tointeger(L, -1));
-        lua_pop(L, 1);
-    }
 
     return 1;
 }
@@ -483,15 +481,16 @@ static int lua_zmq_socket_recv( lua_State *L ) {
     }
 
     int dontwait = luaL_optinteger(L, 2, 0) ? ZMQ_DONTWAIT : 0;
+    size_t buflen = luaL_optnumber(L, 3, LUA_ZMQ_RECV_BUFF_SIZE);
 
-    char buf[LUA_ZMQ_RECV_BUFF_SIZE];
+    char buf[buflen];
 
-    int r = zmq_recv(sock->socket, buf, LUA_ZMQ_RECV_BUFF_SIZE, dontwait);
+    int r = zmq_recv(sock->socket, buf, buflen, dontwait);
 
     if ( r < 0 ) {
         lua_zmq_fail(L, "zmq_recv");
     } else {
-        lua_pushlstring(L, buf, min(LUA_ZMQ_RECV_BUFF_SIZE, r)); // data (truncated to buf len)
+        lua_pushlstring(L, buf, min(buflen, r)); // data (truncated to buf len)
         lua_pushnumber(L, r); // real len received
         return 2;
     }
@@ -594,11 +593,52 @@ static int lua_zmq_microtime( lua_State *L ) {
     return 1;
 }
 
+// arg#1 - list of sockets or fd's to poll
+// arg#2 - timeout (milliseconds), -1 is infinite
+static int lua_zmq_poll( lua_State *L ) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    long timeout = luaL_optnumber(L, 2, -1);
+    size_t nitems = lua_rawlen(L, 1);
+    zmq_pollitem_t items[nitems];
+    lua_ud_zmq_socket *sock;
+
+    size_t i = 0;
+    lua_pushnil(L);
+    while ( lua_next(L, 1) != 0 ) {
+        if ( lua_type(L, -1)==LUA_TNUMBER ) {
+            items[i].socket = NULL;
+            items[i].fd = lua_tointeger(L, -1);
+            items[i].events = ZMQ_POLLERR | ZMQ_POLLIN;// | ZMQ_POLLOUT;
+        } else {
+            sock = luaL_checkudata(L, -1, LUA_MT_ZMQ_SOCKET);
+            items[i].socket = sock->socket;
+            items[i].events = ZMQ_POLLERR | ZMQ_POLLIN;// | ZMQ_POLLOUT;
+        }
+        lua_pop(L, 1);
+        i++;
+    }
+
+    int r = zmq_poll(items, nitems, timeout);
+
+    if ( r < 0 ) {
+        if ( errno==ETERM ) {
+            lua_fail(L, "zmq_poll: one of the sockets was terminated", errno);
+        } else if ( errno==EFAULT ) {
+            lua_fail(L, "zmq_poll: invalid item(s)", errno);
+        } else if ( errno==EINTR ) {
+            lua_fail(L, "zmq_poll: interrupted by a signal", errno);
+        } else {
+            lua_fail(L, "zmq_poll: unknown error", errno);
+        }
+    } else {
+        lua_pushnumber(L, r);
+        return 1;
+    }
+}
+
 /*
 ZMQ_EXPORT int zmq_send_const (void *s, const void *buf, size_t len, int flags);
 ZMQ_EXPORT int zmq_socket_monitor (void *s, const char *addr, int events);
-
-ZMQ_EXPORT int zmq_poll (zmq_pollitem_t *items, int nitems, long timeout);
 
 ZMQ_EXPORT int zmq_proxy (void *frontend, void *backend, void *capture);
 ZMQ_EXPORT int zmq_proxy_steerable (void *frontend, void *backend, void *capture, void *control);

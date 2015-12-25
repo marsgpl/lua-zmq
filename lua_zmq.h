@@ -48,6 +48,7 @@ typedef struct lua_ud_zmq_socket {
 
 LUAMOD_API int luaopen_zmq( lua_State *L );
 
+static int lua_zmq_poll( lua_State *L );
 static int lua_zmq_sleep( lua_State *L );
 static int lua_zmq_microtime( lua_State *L );
 static int lua_zmq__get_ctx_mf( lua_State *L );
@@ -78,6 +79,7 @@ static int lua_zmq_z85_keypair( lua_State *L );
 
 static const luaL_Reg __index[] = {
     {"context", lua_zmq_context},
+    {"poll", lua_zmq_poll},
     {"sleep", lua_zmq_sleep},
     {"microtime", lua_zmq_microtime},
     {"__get_ctx_mf", lua_zmq__get_ctx_mf},
